@@ -1,0 +1,70 @@
+import java.util.concurrent.locks.ReentrantLock
+
+val ReentrantLock transmitter = new ReentrantLock
+
+rule "Single Plug"
+  when
+    Member of g433 received command
+  then
+
+    logInfo("Power_Plug", "type " + triggeringItem.type)
+    logInfo("Power_Plug", "name " + triggeringItem.name)
+    logInfo("Power_Plug", "category " + triggeringItem.category)
+    logInfo("Power_Plug", "label " + triggeringItem.label)
+    logInfo("Power_Plug", "tags " + String.join(",", triggeringItem.tags))
+
+    logInfo("Power_Plug", "state " + triggeringItem.state)
+    logInfo("Power_Plug", "stateDescription " + triggeringItem.stateDescription)
+
+    logInfo("Power_Plug", "Member " + triggeringItem.name + " to " + receivedCommand)
+
+    // [ "Args=arguments..." ]
+    var args = ""
+    triggeringItem.tags.forEach[tag|
+        val s = tag.split('=')
+        if (s.get(0) == 'Args') {
+            args = s.get(1)
+        }
+    ]
+
+    try {
+      // Lock transmitter so other executed rules dont't use it at the same time.
+      // Concurrent calls of the rule will wait till the resource is free again.
+      transmitter.lock()
+
+      // Get the item which triggered the rule
+      // Split the name and get the second part, the number to set as command.
+      //val num = triggeringItem.name.toString.split("Power_Plug_Socket_").get(1)
+      //val num2 = num.split("_")
+
+      // Set the command which should be executed to the output channel 
+      // Auto trigger will then execute the Thing.
+      //var args = " ".join(num2) //  "1 B " + num2.get(0) + " " + num2.get(1)
+      if (receivedCommand == ON) {
+        args += " 1"
+      } else {
+        args += " 0"
+      }
+
+      logInfo("Power_Plug", "sendCommand " + args)
+      Remote_Send_Args.sendCommand(args)
+
+      // Wait for the command to complete
+      while (Remote_Send_Run.state != OFF){
+        Thread::sleep(100)
+      }
+
+      // Mulltiple trigger do not work if there is no break here
+      // maybe external skript needs some time to properly free resources.
+      Thread::sleep(400)
+
+      logInfo("Power_Plug", Remote_Send_Result.state.toString.replaceAll("\r|\n"," ") )
+
+    } catch (Throwable t) {
+    }
+    finally {
+        // Free the resource for the next call.
+        transmitter.unlock()
+    }
+end
+

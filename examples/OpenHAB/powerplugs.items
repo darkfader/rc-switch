@@ -1,0 +1,2 @@
+Switch    Attic_My_Light              "My Light [%s]"                <light>         (gAttic, gLight, g433)          ["Lighting", "Args=1 B 4 3"]
+

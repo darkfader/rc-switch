@@ -1,0 +1,2 @@
+exec:command:send "Send 433MHz signal" [command="/home/openhabian/rc-switch/examples/OpenHAB/send %2$s", interval=0, autorun=true]
+
