@@ -1,2 +1,18 @@
+Group     gHome                         "Home"               <house>                                           ["Building"]
+Group     gAttic                        "Attic"              <attic>         (gHome)                            ["Attic"]
+
+Group gSensors     "Sensors"  <returnpipe> (gHome)
+Group gActuators   "Actuators" <flowpipe> (gHome)
+
+Group:Switch:OR(ON, OFF)         gLight         "All Lights"             <light>         (gActuators)   ["Lighting"]
+
 Switch    Attic_My_Light              "My Light [%s]"                <light>         (gAttic, gLight, g433)          ["Lighting", "Args=1 B 4 3"]
+
+Group:Switch:OR(OFF, ON) g433 "433 MHz switches" <poweroutlet> ["Switch"]
+
+Switch Remote_Send_Run { channel="exec:command:send:run" }
+String Remote_Send_Args { channel="exec:command:send:input" }
+String Remote_Send_Result { channel="exec:command:send:output" }
+// https://community.openhab.org/t/openhab-exec-binding-explained-in-detail-on-433mhz-radio-transmitter-example/34977
+
 
