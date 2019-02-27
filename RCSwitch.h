@@ -65,20 +65,20 @@ class RCSwitch {
   public:
     RCSwitch();
     
-    void switchOn(int nGroupNumber, int nSwitchNumber);
-    void switchOff(int nGroupNumber, int nSwitchNumber);
-    void switchOn(const char* sGroup, int nSwitchNumber);
-    void switchOff(const char* sGroup, int nSwitchNumber);
-    void switchOn(char sFamily, int nGroup, int nDevice);
-    void switchOff(char sFamily, int nGroup, int nDevice);
-    void switchOn(const char* sGroup, const char* sDevice);
-    void switchOff(const char* sGroup, const char* sDevice);
-    void switchOn(char sGroup, int nDevice);
-    void switchOff(char sGroup, int nDevice);
+    bool switchOn(int nGroupNumber, int nSwitchNumber);
+    bool switchOff(int nGroupNumber, int nSwitchNumber);
+    bool switchOn(const char* sGroup, int nSwitchNumber);
+    bool switchOff(const char* sGroup, int nSwitchNumber);
+    bool switchOn(char sFamily, int nGroup, int nDevice);
+    bool switchOff(char sFamily, int nGroup, int nDevice);
+    bool switchOn(const char* sGroup, const char* sDevice);
+    bool switchOff(const char* sGroup, const char* sDevice);
+    bool switchOn(char sGroup, int nDevice);
+    bool switchOff(char sGroup, int nDevice);
 
-    void sendTriState(const char* sCodeWord);
-    void send(unsigned long code, unsigned int length);
-    void send(const char* sCodeWord);
+    bool sendTriState(const char* sCodeWord);
+    bool send(unsigned long code, unsigned int length);
+    bool send(const char* sCodeWord);
     
     #if not defined( RCSwitchDisableReceiving )
     void enableReceive(int interrupt);
@@ -154,6 +154,7 @@ class RCSwitch {
     char* getCodeWordC(char sFamily, int nGroup, int nDevice, bool bStatus);
     char* getCodeWordD(char group, int nDevice, bool bStatus);
     char* getCodeWordE(const char* sGroup, const char* sDevice, bool bStatus);
+    char* getCodeWordF(const char* sGroup, const char* sDevice, bool bStatus); // 6+4 DIP switches
     void transmit(HighLow pulses);
 
     #if not defined( RCSwitchDisableReceiving )

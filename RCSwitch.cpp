@@ -37,6 +37,10 @@
     // so we must normalize these for the ARM processor:
     #define PROGMEM
     #define memcpy_P(dest, src, num) memcpy((dest), (src), (num))
+    #include <stdio.h>
+    #define dprintf(...) // printf(__VA_ARGS__)
+#else
+    #define dprintf(...)
 #endif
 
 #if defined(ESP8266) || defined(ESP32)
@@ -79,7 +83,8 @@ static const RCSwitch::Protocol PROGMEM proto[] = {
   { 500, {  6, 14 }, {  1,  2 }, {  2,  1 }, false },    // protocol 5
   { 450, { 23,  1 }, {  1,  2 }, {  2,  1 }, true },     // protocol 6 (HT6P20B)
   { 150, {  2, 62 }, {  1,  6 }, {  6,  1 }, false },    // protocol 7 (HS2303-PT, i. e. used in AUKEY Remote)
-  { 150, {  1, 31 }, {  1,  3 }, {  3,  1 }, false }     // protocol 8 (FHT-7901, uses type E encoding hence different from protocol 1)
+  { 150, {  1, 31 }, {  1,  3 }, {  3,  1 }, false },    // protocol 8 (FHT-7901, uses type E encoding hence different from protocol 1)
+  { 350, {  1, 31 }, {  1,  3 }, {  3,  1 }, false },    // protocol 9 (SC300, uses type F encoding hence different from protocol 1)
 };
 // Please don't change order of protocols as other programs rely on it.
 
@@ -190,8 +195,8 @@ void RCSwitch::disableTransmit() {
  * @param sGroup        Code of the switch group (A,B,C,D)
  * @param nDevice       Number of the switch itself (1..3)
  */
-void RCSwitch::switchOn(char sGroup, int nDevice) {
-  this->sendTriState( this->getCodeWordD(sGroup, nDevice, true) );
+bool RCSwitch::switchOn(char sGroup, int nDevice) {
+  return this->sendTriState( this->getCodeWordD(sGroup, nDevice, true) );
 }
 
 /**
@@ -200,8 +205,8 @@ void RCSwitch::switchOn(char sGroup, int nDevice) {
  * @param sGroup        Code of the switch group (A,B,C,D)
  * @param nDevice       Number of the switch itself (1..3)
  */
-void RCSwitch::switchOff(char sGroup, int nDevice) {
-  this->sendTriState( this->getCodeWordD(sGroup, nDevice, false) );
+bool RCSwitch::switchOff(char sGroup, int nDevice) {
+  return this->sendTriState( this->getCodeWordD(sGroup, nDevice, false) );
 }
 
 /**
@@ -211,8 +216,8 @@ void RCSwitch::switchOff(char sGroup, int nDevice) {
  * @param nGroup   Number of group (1..4)
  * @param nDevice  Number of device (1..4)
   */
-void RCSwitch::switchOn(char sFamily, int nGroup, int nDevice) {
-  this->sendTriState( this->getCodeWordC(sFamily, nGroup, nDevice, true) );
+bool RCSwitch::switchOn(char sFamily, int nGroup, int nDevice) {
+  return this->sendTriState( this->getCodeWordC(sFamily, nGroup, nDevice, true) );
 }
 
 /**
@@ -222,8 +227,8 @@ void RCSwitch::switchOn(char sFamily, int nGroup, int nDevice) {
  * @param nGroup   Number of group (1..4)
  * @param nDevice  Number of device (1..4)
  */
-void RCSwitch::switchOff(char sFamily, int nGroup, int nDevice) {
-  this->sendTriState( this->getCodeWordC(sFamily, nGroup, nDevice, false) );
+bool RCSwitch::switchOff(char sFamily, int nGroup, int nDevice) {
+  return this->sendTriState( this->getCodeWordC(sFamily, nGroup, nDevice, false) );
 }
 
 /**
@@ -232,8 +237,8 @@ void RCSwitch::switchOff(char sFamily, int nGroup, int nDevice) {
  * @param nAddressCode  Number of the switch group (1..4)
  * @param nChannelCode  Number of the switch itself (1..4)
  */
-void RCSwitch::switchOn(int nAddressCode, int nChannelCode) {
-  this->sendTriState( this->getCodeWordB(nAddressCode, nChannelCode, true) );
+bool RCSwitch::switchOn(int nAddressCode, int nChannelCode) {
+  return this->sendTriState( this->getCodeWordB(nAddressCode, nChannelCode, true) );
 }
 
 /**
@@ -242,8 +247,8 @@ void RCSwitch::switchOn(int nAddressCode, int nChannelCode) {
  * @param nAddressCode  Number of the switch group (1..4)
  * @param nChannelCode  Number of the switch itself (1..4)
  */
-void RCSwitch::switchOff(int nAddressCode, int nChannelCode) {
-  this->sendTriState( this->getCodeWordB(nAddressCode, nChannelCode, false) );
+bool RCSwitch::switchOff(int nAddressCode, int nChannelCode) {
+  return this->sendTriState( this->getCodeWordB(nAddressCode, nChannelCode, false) );
 }
 
 /**
@@ -253,7 +258,7 @@ void RCSwitch::switchOff(int nAddressCode, int nChannelCode) {
  * @param sGroup        Code of the switch group (refers to DIP switches 1..5 where "1" = on and "0" = off, if all DIP switches are on it's "11111")
  * @param nChannelCode  Number of the switch itself (1..5)
  */
-void RCSwitch::switchOn(const char* sGroup, int nChannel) {
+bool RCSwitch::switchOn(const char* sGroup, int nChannel) {
   const char* code[6] = { "00000", "10000", "01000", "00100", "00010", "00001" };
   this->switchOn(sGroup, code[nChannel]);
 }
@@ -265,7 +270,7 @@ void RCSwitch::switchOn(const char* sGroup, int nChannel) {
  * @param sGroup        Code of the switch group (refers to DIP switches 1..5 where "1" = on and "0" = off, if all DIP switches are on it's "11111")
  * @param nChannelCode  Number of the switch itself (1..5)
  */
-void RCSwitch::switchOff(const char* sGroup, int nChannel) {
+bool RCSwitch::switchOff(const char* sGroup, int nChannel) {
   const char* code[6] = { "00000", "10000", "01000", "00100", "00010", "00001" };
   this->switchOff(sGroup, code[nChannel]);
 }
@@ -276,11 +281,13 @@ void RCSwitch::switchOff(const char* sGroup, int nChannel) {
  * @param sGroup        Code of the switch group (refers to DIP switches 1..5 where "1" = on and "0" = off, if all DIP switches are on it's "11111")
  * @param sDevice       Code of the switch device (refers to DIP switches 6..10 (A..E) where "1" = on and "0" = off, if all DIP switches are on it's "11111")
  */
-void RCSwitch::switchOn(const char* sGroup, const char* sDevice) {
-  if (this->protocolNumber == 8) {
-      this->sendTriState( this->getCodeWordE(sGroup, sDevice, true) );
+bool RCSwitch::switchOn(const char* sGroup, const char* sDevice) {
+  if (this->protocolNumber == 9) {
+      return this->sendTriState( this->getCodeWordF(sGroup, sDevice, true) );
+  } else if (this->protocolNumber == 8) {
+      return this->sendTriState( this->getCodeWordE(sGroup, sDevice, true) );
   } else {
-      this->sendTriState( this->getCodeWordA(sGroup, sDevice, true) );
+      return this->sendTriState( this->getCodeWordA(sGroup, sDevice, true) );
   }
 }
 
@@ -290,11 +297,13 @@ void RCSwitch::switchOn(const char* sGroup, const char* sDevice) {
  * @param sGroup        Code of the switch group (refers to DIP switches 1..5 where "1" = on and "0" = off, if all DIP switches are on it's "11111")
  * @param sDevice       Code of the switch device (refers to DIP switches 6..10 (A..E) where "1" = on and "0" = off, if all DIP switches are on it's "11111")
  */
-void RCSwitch::switchOff(const char* sGroup, const char* sDevice) {
-  if (this->protocolNumber == 8) {
-      this->sendTriState( this->getCodeWordE(sGroup, sDevice, false) );
+bool RCSwitch::switchOff(const char* sGroup, const char* sDevice) {
+  if (this->protocolNumber == 9) {
+      return this->sendTriState( this->getCodeWordF(sGroup, sDevice, false) );
+  } else if (this->protocolNumber == 8) {
+      return this->sendTriState( this->getCodeWordE(sGroup, sDevice, false) );
   } else {
-      this->sendTriState( this->getCodeWordA(sGroup, sDevice, false) );
+      return this->sendTriState( this->getCodeWordA(sGroup, sDevice, false) );
   }
 }
 
@@ -470,6 +479,10 @@ char* RCSwitch::getCodeWordD(char sGroup, int nDevice, bool bStatus) {
  *
  */
 char* RCSwitch::getCodeWordE(const char* sGroup, const char* sDevice, bool bStatus) {
+  if (strlen(sGroup) != 5 || strlen(sDevice) != 5) {
+      return NULL;
+  }
+
   static char sReturn[13];
   int nReturnPos = 0;
 
@@ -488,10 +501,47 @@ char* RCSwitch::getCodeWordE(const char* sGroup, const char* sDevice, bool bStat
   return sReturn;
 }
 
+/*
+ * The code word is a tristate word and with following bit pattern:
+ *
+ * +-----------------------------+-------------------+----------+--------------+
+ * | 6 bits address              | 4 bits address    | 1 bit    | 1 bits       |
+ * | switch group                | device number     | on / off | unused       |
+ * | OFF=F ON=0                  | OFF=F ON=0        | 1 / 0    | 0            |
+ * |                             | A=0FFF ...        |          |              |
+ * +-----------------------------+-------------------+----------+--------------+
+ */
+char* RCSwitch::getCodeWordF(const char* sGroup, const char* sDevice, bool bStatus) {
+  if (strlen(sGroup) != 6 || strlen(sDevice) != 4) {
+      return NULL;
+  }
+
+  static char sReturn[13];
+  int nReturnPos = 0;
+
+  for (int i = 0; i < 6; i++) {
+    sReturn[nReturnPos++] = (sGroup[i] == '0') ? 'F' : '0';
+  }
+
+  for (int i = 0; i < 4; i++) {
+    sReturn[nReturnPos++] = (sDevice[i] == '0') ? 'F' : '0';
+  }
+
+  sReturn[nReturnPos++] = bStatus ? '1' : '0';
+  sReturn[nReturnPos++] = '0';
+
+  sReturn[nReturnPos] = '\0';
+  return sReturn;
+}
+
 /**
  * @param sCodeWord   a tristate code word consisting of the letter 0, 1, F
  */
-void RCSwitch::sendTriState(const char* sCodeWord) {
+bool RCSwitch::sendTriState(const char* sCodeWord) {
+  if (sCodeWord == NULL) {
+      return false;
+  }
+  dprintf("sendTriState %s\n", sCodeWord);
   // turn the tristate code word into the corresponding bit pattern, then send it
   unsigned long code = 0;
   unsigned int length = 0;
@@ -512,13 +562,17 @@ void RCSwitch::sendTriState(const char* sCodeWord) {
     }
     length += 2;
   }
-  this->send(code, length);
+  return this->send(code, length);
 }
 
 /**
  * @param sCodeWord   a binary code word consisting of the letter 0, 1
  */
-void RCSwitch::send(const char* sCodeWord) {
+bool RCSwitch::send(const char* sCodeWord) {
+  if (sCodeWord == NULL) {
+      return false;
+  }
+  dprintf("send %s\n", sCodeWord);
   // turn the tristate code word into the corresponding bit pattern, then send it
   unsigned long code = 0;
   unsigned int length = 0;
@@ -528,7 +582,7 @@ void RCSwitch::send(const char* sCodeWord) {
       code |= 1L;
     length++;
   }
-  this->send(code, length);
+  return this->send(code, length);
 }
 
 /**
@@ -536,9 +590,9 @@ void RCSwitch::send(const char* sCodeWord) {
  * bits are sent from MSB to LSB, i.e., first the bit at position length-1,
  * then the bit at position length-2, and so on, till finally the bit at position 0.
  */
-void RCSwitch::send(unsigned long code, unsigned int length) {
+bool RCSwitch::send(unsigned long code, unsigned int length) {
   if (this->nTransmitterPin == -1)
-    return;
+    return false;
 #if not defined( RCSwitchDisableReceiving )
   // make sure the receiver is disabled while we transmit
   int nReceiverInterrupt_backup = nReceiverInterrupt;
@@ -566,6 +620,8 @@ void RCSwitch::send(unsigned long code, unsigned int length) {
     this->enableReceive(nReceiverInterrupt_backup);
   }
 #endif
+
+  return true;
 }
 
 /**

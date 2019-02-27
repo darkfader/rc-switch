@@ -81,10 +81,11 @@ int main(int argc, const char *argv[]) {
         printf("  6 HT6P20B, 450us, inverted signal\n");
         printf("  7 HS2303-PT i. e. used in AUKEY Remote, 150us\n");
         printf("  8 FHT-7901 uses type E encoding hence different from protocol 1, 150us\n");
+        printf("  9 SC-300 uses type F encoding, 350us\n");
         printf("\n");
         printf("type + parameters: (s=string, n=number, b=boolean)\n");
         printf("  A sGroup sDevice bStatus\n");
-        printf("    10 pole DIP switches\n");
+        printf("    5+5 pole DIP switches\n");
         printf("  B nGroupNumber, int nSwitchNumber, bool bStatus\n");
         printf("    two rotary/sliding switches\n");
         printf("  C char sFamily, int nGroup, int nDevice, bool bStatus\n");
@@ -92,7 +93,9 @@ int main(int argc, const char *argv[]) {
         printf("  D char group, int nDevice, bool bStatus\n");
         printf("    REV\n");
         printf("  E const char *sGroup, const char *sDevice, bool bStatus\n");
-        printf("    10 pole DIP switches\n");
+        printf("    5+5 pole DIP switches\n");
+        printf("  F const char *sGroup, const char *sDevice, bool bStatus\n");
+        printf("    6+4 pole DIP switches\n");
         printf("\n");
         printf("pulseLength - optional pulse length\n");
         return -1;
@@ -103,15 +106,17 @@ int main(int argc, const char *argv[]) {
     }
 
     int  argi      = 1;
-    int  nProtocol = NEXT_NUMBER(1, 8);
-    char cType     = NEXT_CHAR('A', 'E');
+    int  nProtocol = NEXT_NUMBER(1, 9);
+    char cType     = NEXT_CHAR('A', 'F');
 
     RCSwitch mySwitch = RCSwitch();
     mySwitch.setProtocol(nProtocol);
     mySwitch.enableTransmit(PIN);
 
     switch (cType) {
-        case 'A': {
+        case 'A': 
+        case 'E':
+        case 'F': {
             const char *sGroup  = NEXT_STRING();
             const char *sDevice = NEXT_STRING();
             int         bStatus = NEXT_BOOL();
@@ -124,7 +129,6 @@ int main(int argc, const char *argv[]) {
             }
             break;
         }
-        case '@':
         case 'B': {
             int nAddressCode = NEXT_NUMBER(1, 4);
             int nChannelCode = NEXT_NUMBER(1, 4);
@@ -162,19 +166,6 @@ int main(int argc, const char *argv[]) {
                 mySwitch.switchOn(sGroup, nDevice);
             } else {
                 mySwitch.switchOff(sGroup, nDevice);
-            }
-            break;
-        }
-        case 'E': {
-            const char *sGroup  = NEXT_STRING();
-            const char *sDevice = NEXT_STRING();
-            int         bStatus = NEXT_BOOL();
-            dprintf("%c %s %s %u\n", cType, sGroup, sDevice, bStatus);
-            OPTIONAL_PULSE_LENGTH();
-            if (bStatus) {
-                mySwitch.switchOn(sGroup, sDevice);
-            } else {
-                mySwitch.switchOff(sGroup, sDevice);
             }
             break;
         }
